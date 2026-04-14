@@ -1492,7 +1492,7 @@ func bdDepList(beadID string) ([]bdDepResult, error) {
 // directory. We resolve the correct .beads directory from the bead's prefix via
 // routes.jsonl so this works regardless of the caller's working directory.
 func bdListChildren(parentID string) ([]bdShowResult, error) {
-	cmd := exec.Command("bd", "list", "--parent="+parentID, "--json")
+	cmd := exec.Command("bd", "list", "--parent="+parentID, "--limit=0", "--json")
 	// Route to the correct rig database via prefix resolution.
 	// resolveBeadDir returns the parent of .beads (the working directory bd
 	// expects), unlike beadsDirForID which returns the .beads directory itself.

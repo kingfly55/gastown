@@ -199,8 +199,23 @@ func runMountain(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("staging has warnings, use --force to proceed")
 	}
 
-	// Step 3: Create the staged convoy.
+	// Step 3: Check for an existing mountain convoy for this epic (Bug 3 guard).
+	// Re-running gt mountain without cancelling the prior convoy creates duplicate
+	// feeding and out-of-order dispatch (CONVOY-OUT-OF-ORDER-DISPATCH-BUG.md).
 	title := "Mountain: " + result.Title
+	if !mountainForce {
+		if townBeads, tbErr := getTownBeadsDir(); tbErr == nil {
+			if existing, exErr := findMountainConvoys(townBeads); exErr == nil {
+				for _, cv := range existing {
+					if cv.Title == title {
+						return fmt.Errorf("mountain convoy %s already exists for this epic\nCancel it first with: gt mountain cancel %s\nOr re-run with --force to create a new convoy anyway", cv.ID, cv.ID)
+					}
+				}
+			}
+		}
+	}
+
+	// Step 4: Create the staged convoy.
 	convoyID, err := createStagedConvoy(dag, waves, status, title)
 	if err != nil {
 		return fmt.Errorf("create convoy: %w", err)
@@ -210,12 +225,12 @@ func runMountain(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  Convoy: %s %q\n", convoyID, title)
 	fmt.Printf("  Label: mountain\n")
 
-	// Step 4: Add the mountain label.
+	// Step 5: Add the mountain label.
 	if err := bdAddLabelTown(convoyID, "mountain"); err != nil {
 		return fmt.Errorf("add mountain label: %w", err)
 	}
 
-	// Step 5: Launch — transition to open + dispatch Wave 1.
+	// Step 6: Launch — transition to open + dispatch Wave 1.
 	if err := transitionConvoyToOpen(convoyID, true); err != nil {
 		return fmt.Errorf("launch convoy: %w", err)
 	}

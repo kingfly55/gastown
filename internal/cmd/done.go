@@ -1044,13 +1044,15 @@ func runDone(cmd *cobra.Command, args []string) (retErr error) {
 				}
 			}
 
-			mrIssue, err := bd.Create(beads.CreateOptions{
+			// Use a rig-rooted beads instance so bd create runs from the rig directory,
+			// targeting the rig's database without needing the unsupported --rig flag.
+			rigBd := beads.NewWithBeadsDir(filepath.Join(townRoot, rigName), resolvedBeads)
+			mrIssue, err := rigBd.Create(beads.CreateOptions{
 				Title:       title,
 				Labels:      []string{"gt:merge-request"},
 				Priority:    priority,
 				Description: description,
 				Ephemeral:   true,
-				Rig:         rigName, // Ensure MR bead is created in the rig's database (gt-7y7)
 			})
 			if err != nil {
 				// Non-fatal: record the error and skip to notifyWitness.

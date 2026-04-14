@@ -1226,9 +1226,10 @@ func (b *Beads) Create(opts CreateOptions) (*Issue, error) {
 	if opts.Ephemeral {
 		args = append(args, "--ephemeral")
 	}
-	if opts.Rig != "" {
-		args = append(args, "--rig="+opts.Rig)
-	}
+	// Note: opts.Rig is intentionally NOT passed as --rig flag here.
+	// bd create (v1.0.0) has no --rig flag. Callers that need to target a specific
+	// rig's database should use beads.New(filepath.Join(townRoot, rigName)) so
+	// that bd runs with the rig directory as its working directory.
 	// Default Actor from BD_ACTOR env var if not specified
 	// Uses getActor() to respect isolated mode (tests)
 	actor := opts.Actor

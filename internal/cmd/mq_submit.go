@@ -266,14 +266,16 @@ func runMqSubmit(cmd *cobra.Command, args []string) error {
 		mrIssue = existingMR
 		fmt.Printf("%s MR already exists (idempotent)\n", style.Bold.Render("✓"))
 	} else {
-		// Create MR bead (ephemeral wisp - will be cleaned up after merge)
-		mrIssue, err = bd.Create(beads.CreateOptions{
+		// Create MR bead (ephemeral wisp - will be cleaned up after merge).
+		// Use a rig-rooted beads instance so bd create runs from the rig directory,
+		// targeting the rig's database without needing the unsupported --rig flag.
+		rigBd := beads.New(filepath.Join(townRoot, rigName))
+		mrIssue, err = rigBd.Create(beads.CreateOptions{
 			Title:       title,
 			Labels:      []string{"gt:merge-request"},
 			Priority:    priority,
 			Description: description,
 			Ephemeral:   true,
-			Rig:         rigName, // Ensure MR bead is created in the rig's database (gt-7y7)
 		})
 		if err != nil {
 			return fmt.Errorf("creating merge request bead: %w", err)

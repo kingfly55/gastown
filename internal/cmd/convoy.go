@@ -2439,45 +2439,57 @@ func (d issueDetails) IsBlocked() bool {
 
 // getIssueDetailsBatch fetches details for multiple issues in a single bd show call.
 // Returns a map from issue ID to details. Missing/invalid issues are omitted from the map.
+//
+// Groups IDs by their resolved rig directory and runs per-rig bd show calls.
+// This ensures blocked_by_count is computed from the correct database rather than
+// via prefix routing from town root, which can return stale or incomplete dep data
+// (GH#2961: polling path IsBlocked false-negative when blocking deps not visible).
 func getIssueDetailsBatch(issueIDs []string) map[string]*issueDetails {
 	result := make(map[string]*issueDetails)
 	if len(issueIDs) == 0 {
 		return result
 	}
 
-	// Build args: bd show id1 id2 id3 ... --json
-	args := append([]string{"show"}, issueIDs...)
-	args = append(args, "--json")
-
-	// Run from town root so bd's prefix routing (routes.jsonl) can dispatch
-	// to the correct rig database for cross-rig bead lookups. (GH#2960)
+	// Group IDs by rig directory so each bd show runs in the correct database.
 	townRoot, _ := workspace.FindFromCwdOrError()
-	showCmd := exec.Command("bd", args...)
-	if townRoot != "" {
-		showCmd.Dir = townRoot
-		showCmd.Env = stripEnvKey(os.Environ(), "BEADS_DIR")
-	}
-	var stdout bytes.Buffer
-	showCmd.Stdout = &stdout
-
-	if err := showCmd.Run(); err != nil {
-		// Batch failed - fall back to individual lookups for robustness
-		// This handles cases where some IDs are invalid/missing
-		for _, id := range issueIDs {
-			if details := getIssueDetails(id); details != nil {
-				result[id] = details
-			}
+	dirGroups := make(map[string][]string, 4)
+	for _, id := range issueIDs {
+		dir := resolveBeadDir(id)
+		if dir == "" || dir == "." {
+			dir = townRoot
 		}
-		return result
+		dirGroups[dir] = append(dirGroups[dir], id)
 	}
 
-	var issues []issueDetailsJSON
-	if err := json.Unmarshal(stdout.Bytes(), &issues); err != nil {
-		return result
-	}
+	for dir, ids := range dirGroups {
+		args := append([]string{"show"}, ids...)
+		args = append(args, "--json")
+		args = beads.MaybePrependAllowStale(args)
 
-	for _, issue := range issues {
-		result[issue.ID] = issue.toIssueDetails()
+		showCmd := exec.Command("bd", args...) //nolint:gosec // G204: bd is a trusted internal tool
+		showCmd.Dir = dir
+		showCmd.Env = stripEnvKey(os.Environ(), "BEADS_DIR")
+		var stdout bytes.Buffer
+		showCmd.Stdout = &stdout
+
+		if err := showCmd.Run(); err != nil {
+			// Per-rig batch failed — fall back to individual lookups for robustness.
+			for _, id := range ids {
+				if details := getIssueDetails(id); details != nil {
+					result[id] = details
+				}
+			}
+			continue
+		}
+
+		var issues []issueDetailsJSON
+		if err := json.Unmarshal(stdout.Bytes(), &issues); err != nil {
+			continue
+		}
+
+		for _, issue := range issues {
+			result[issue.ID] = issue.toIssueDetails()
+		}
 	}
 
 	return result
