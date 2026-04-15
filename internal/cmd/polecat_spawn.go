@@ -61,6 +61,10 @@ type SlingSpawnOptions struct {
 // This is used by gt sling when the target is a rig name.
 // The caller (sling) handles hook attachment and nudging.
 func SpawnPolecatForSling(rigName string, opts SlingSpawnOptions) (*SpawnedPolecatInfo, error) {
+	if strings.TrimSpace(opts.HookBead) == "" {
+		return nil, fmt.Errorf("hook bead is required for polecat spawn")
+	}
+
 	// Find workspace
 	townRoot, err := workspace.FindFromCwdOrError()
 	if err != nil {
