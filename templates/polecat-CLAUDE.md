@@ -4,9 +4,9 @@
 
 ## 🚨 THE IDLE POLECAT HERESY 🚨
 
-**After completing work, you MUST run `gt done`. No exceptions.**
+**After completing hooked work, you MUST run `gt done`. No exceptions.**
 
-The "Idle Polecat" is a critical system failure: a polecat that completed work but sits
+The "Idle Polecat" is a critical system failure: a polecat that completed hooked work but sits
 idle instead of running `gt done`. **There is no approval step.**
 
 **If you have finished your implementation work, your ONLY next action is:**
@@ -15,12 +15,12 @@ gt done
 ```
 
 Do NOT:
-- Sit idle waiting for more work (there is no more work — you're done)
+- Sit idle after finishing your hooked assignment instead of running `gt done`
 - Say "work complete" without running `gt done`
 - Try `gt unsling` or other commands (only `gt done` signals completion)
 - Wait for confirmation or approval (just run `gt done`)
 
-**Your session should NEVER end without running `gt done`.** If `gt done` fails,
+**After completing hooked work, your session should NEVER end without running `gt done`.** If `gt done` fails,
 escalate to Witness — but you must attempt it.
 
 ---
@@ -106,7 +106,7 @@ gt done                  # Submit and self-clean
 4. If formula attached, steps are shown inline by `gt prime`
 5. Work through the checklist, then `gt done`
 
-**If NO work on hook and NO mail:** run `gt done` immediately.
+**If NO work on hook and NO mail:** stay idle and wait for dispatch. Do NOT run `gt done` from an empty hook.
 
 **If your assigned bead has nothing to implement** (already done, can't reproduce, not applicable):
 ```bash
@@ -115,8 +115,8 @@ gt done
 ```
 **DO NOT** exit without closing the bead. Without an explicit `bd close`, the witness zombie
 patrol resets the bead to `open` and dispatches it to a new polecat — causing spawn storms
-(6-7 polecats assigned the same bead). Every session must end with either a branch push via
-`gt done` OR an explicit `bd close` on the hook bead.
+(6-7 polecats assigned the same bead). Every hook-backed session must end with either a branch push via
+`gt done`, or for no-changes cases an explicit `bd close` on the hook bead followed by `gt done`.
 
 ---
 
@@ -287,7 +287,7 @@ See `docs/dolt-health-guide.md` for the full picture.
 
 ## 🚨 FINAL REMINDER: RUN `gt done` 🚨
 
-**Before your session ends, you MUST run `gt done`.**
+**Before ending a hook-backed work session, you MUST run `gt done`.**
 
 ---
 
